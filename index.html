@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TW geo info</title>
+</head>
+<body style="background: linear-gradient(to right bottom, rgb(15, 12, 41), rgb(48, 43, 99), rgb(36, 36, 62));">
+<!-- partial:index.partial.html -->
+<div id="main" style="width:1200px; height:1200px;"></div>
+<!-- partial -->
+<script type="text/javascript" src="https://fastly.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+<script type="text/javascript" src="https://fastly.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+
+<script>
+  // 初始化 ECharts 實例
+var chartDom = document.getElementById("main");
+var myChart = echarts.init(chartDom);
+var option;
+
+// 關鍵：必須使用 GitHub 的 Raw 原始檔案網址，否則會讀取到 HTML 網頁
+
+const mapUrl = "https://raw.githubusercontent.com/slimMay/Map-TW/main/taipei_12districts.json.geojson";
+
+// 1. 使用 Fetch 載入你從 QGIS 導出的經緯度地圖
+fetch(mapUrl)
+    .then((response) => {
+        if (!response.ok) throw new Error('地圖檔案讀取失敗，請檢查網址');
+        return response.json();
+    })
+    .then((geojson) => {
+        // 2. 註冊地圖底層
+        echarts.registerMap('TaipeiMap', geojson);
+
+        option = {
+            backgroundColor: 'transparent', // 配合你設定的綠色背景
+            title: {
+                text: '臺北市業績達成率戰情室',
+                left: 'center',
+                textStyle: { color: '#fff', fontSize: 24 }
+            },
+            tooltip: {
+                trigger: 'item',
+                backgroundColor: 'rgba(0,0,0,0.8)',
+                textStyle: { color: '#fff' },
+                formatter: function (params) {
+                    // 區分地圖區域與散點的提示內容
+                    if (params.seriesType === 'scatter') {
+                        return `門市：${params.value[3]}<br/>排名：第 ${params.value[4]} 名<br/>營業額：${params.value[2]}`;
+                    }
+                    return `${params.name}<br/>達成率：${params.value || 0}%`;
+                }
+            },
+            // 設定地圖顯示參數
+            geo: {
+                map: 'TaipeiMap',
+                roam: true, // 開啟縮放平移
+                layoutCenter: ['50%', '50%'],
+                layoutSize: '95%',
+                label: {
+                    show: true,
+                    color: 'rgba(255,255,255,0.6)',
+                    fontSize: 14
+                },
+                itemStyle: {
+                    areaColor: '#001a33', // 深藍色底塊
+                    borderColor: '#00d4ff', // 亮藍色邊框
+                    borderWidth: 1.5,
+                    shadowBlur: 10, // 外發光效果
+                    shadowColor: 'rgba(0, 212, 255, 0.5)'
+                },
+                emphasis: {
+                    itemStyle: { areaColor: '#003366' },
+                    label: { color: '#fff', show: true }
+                }
+            },
+            series: [
+                // 第一層：門市標註點 (Scatter)
+                {
+                    name: '門市分佈',
+                    type: 'scatter',
+                    coordinateSystem: 'geo',
+                    symbol: 'pin', // 使用大頭針圖示
+                    symbolSize: 40,
+                    data: [
+                        {name:'信義區', value:[121.558043, 25.020321, 2700, '信義黎忠', '1']},
+                        {name:'北投區', value:[121.511466, 25.117048, 2700, '北投致遠', '8']},
+                        {name:'文山區', value:[121.568447, 24.988543, 2700, '文山保儀', '2']},
+                        {name:'內湖區', value:[121.619006, 25.070877, 2700, '內湖康樂', '9']}, // 已將港湖修正為內湖
+                        {name:'內湖區', value:[121.54915, 25.084449, 2700, '大直實踐', '10']},
+                        {name:'松山區', value:[121.562455, 25.050644, 2700, '松山吉祥', '3']},
+                        {name:'南港區', value:[121.616957, 25.044368, 2700, '南港中研', '11']}, // 已將港湖修正為南港
+                        {name:'中正區', value:[121.507484, 25.033729, 2700, '中正延平', '4']},
+                        {name:'內湖區', value:[121.558342, 25.080941, 2700, '大直敬業', '12']},
+                        {name:'文山區', value:[121.544359, 24.992481, 2700, '文山景興', '5']},
+                        {name:'北投區', value:[121.519266, 25.111108, 2800, '北投明德', '6']},                         , 
+                        {name:'內湖區', value:[121.601443, 25.086469, 2700, '內湖成功', '14']},
+                        {name:'內湖區', value:[121.585743, 25.067862, 2720, '內湖民權', '15']},
+                        {name:'內湖區', value:[121.587235, 25.088161, 2700, '內湖金龍', '16']},
+                        {name:'內湖區', value:[121.596703, 25.080998, 2700, '內湖星雲', '17']},
+                        {name:'內湖區', value:[121.576953, 25.077882, 2700, '內湖港墘', '18']},
+                        {name:'內湖區', value:[121.613412, 25.069745, 2700, '內湖南湖', '19']},
+                        {name:'內湖區', value:[121.583989, 25.078246, 2700, '內湖文德', '7']}
+                    ],
+                    label: {
+                        show: true,
+                        formatter: (p) => p.value[4], // 顯示排名數字
+                        color: '#fff',
+                        fontSize: 12
+                    },
+                    itemStyle: {
+                        color: '#f44336', // 標註點顏色
+                        shadowBlur: 10,
+                        shadowColor: '#000'
+                    },
+                    zlevel: 2 // 確保點位在地圖上方
+                },
+                // 第二層：地圖熱力顏色呈現
+                {
+                    type: 'map',
+                    geoIndex: 0,
+                    data: [
+                        {name: '北投區', value: 100}, {name: '士林區', value: 210},
+                        {name: '內湖區', value: 158}, {name: '松山區', value: 620},
+                        {name: '中山區', value: 800}, {name: '大同區', value: 205},
+                        {name: '萬華區', value: 700}, {name: '中正區', value: 620},
+                        {name: '大安區', value: 730}, {name: '信義區', value: 800},
+                        {name: '南港區', value: 205}, {name: '文山區', value: 700}
+                    ]
+                }
+            ],
+            // 根據數據自動著色
+            //visualMap: {
+             //   min: 0,
+             //   max: 1000,
+             //   left: '5%',
+             //   bottom: '5%',
+             //   text: ['高', '低'],
+             //   textStyle: { color: '#fff' },
+             //   calculable: true,
+             //   inRange: {
+             //       color: ["#23d160", "#ffde00", "#fc9700", "#fa1818"] // 綠到紅的漸層
+              //  }
+            //}
+        };
+
+        myChart.setOption(option);
+    })
+    .catch(error => console.error("發生錯誤：", error));
+
+// 視窗縮放自適應
+window.addEventListener('resize', () => myChart.resize());
+
+</script>
+
+</body>
+</html>
+
